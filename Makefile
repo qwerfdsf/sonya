@@ -1,39 +1,35 @@
-#!/usr/bin/make
-
-## Default shell
 SHELL = /bin/sh
+docker_bin := $(shell command -v docker 2> /dev/null)
+docker_compose_bin := $(shell command -v docker-compose 2> /dev/null)
 
-## Default command
 .DEFAULT_GOAL := help
 
-# --- [ Base ] ---------------------------------------------------------------------------------------------------------
-## Initializes the project
-init: npm-install
+help: ## Show this help
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "\n  Allowed for overriding next properties:\n\n\
+		Usage example:\n\
+	    	make up"
+# --- [ Init ] --------------------------------------------------------------------------------------------------
 
-## Builds the project
-build: npm-build
+init-client:
+	cd front/ && make npm-install
 
-# --- [ Node ] ---------------------------------------------------------------------------------------------------------
-## Installs Node dependencies
-npm-install:
-	@cd ./client/ && npm i
+dev-client: ## Запуск клиента в dev режиме
+	cd front/ && make npm-dev
 
-## Builds Node the project
-npm-build:
-	@cd ./client/ && npm run build
+# --- [ Docker containers ] ------------------------------------------------------------------------------------------
 
-## Starts Node dev-server
-npm-dev:
-	@cd ./client/ && npm run dev
+build: ## Сборка docker контейнеров приложения
+	$(docker_compose_bin) build
 
-# --- [ Help ] ---------------------------------------------------------------------------------------------------------
-## Displays help
-help:
-	@echo '+----------------------------+'
-	@echo '| List of available commands |'
-	@echo '+----------------------------+'
-	@echo 'Usage: make [COMMAND]'
-	@awk 'BEGIN {FS = ":"} /^##.*?/ {printf "\n%s", $$1} /^[a-zA-Z_-]+:/ {printf ":%s\n", $$1} /^# ---/ {printf "\n%s\n", $$1}' $(MAKEFILE_LIST) | \
-	awk 'BEGIN {FS = ":"} /^##.*?:/ {print $$2, $$1} /\[.*?\]/ {print}' | \
-	sed 's/# -* \(.*\) -*/\1/' | \
-	awk 'BEGIN {FS = "##"} /^[a-zA-Z_-]+/ {printf " \033[1;1m%-38s\033[0m\t- %s\n", $$1, $$2} /\[.*?\]/ {printf "\n\033[1;1m%s\033[0m\n", $$1}'
+up: build ## Сборка и поднятие docker контейнеров при помощи docker-compose
+	$(docker_compose_bin) -f docker-compose$(if $(MODE_COMPOSE),-$(MODE_COMPOSE),).yml up  --remove-orphans
+
+stop: ## Остановка docker контейнеров
+	@$(docker_bin) ps -aq | xargs $(docker_bin) stop
+
+down: ## Удаление docker контейнеров
+	$(docker_compose_bin) down
+
+
+

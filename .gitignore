@@ -1,0 +1,9 @@
+# IDEs and editors
+/.idea
+/sonya/client/node_modules
+/sonya/client/dist
+/sonya/client/package-lock.json
+back/app/node_modules
+back/app/dist
+back/app/package-lock.json
+
